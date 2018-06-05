@@ -1,5 +1,46 @@
-const EventBus = new Vue()
 
+const state = {
+  notes: [],
+  timestamps: []
+}
+const mutations = {
+  ADD_NOTE (state, payload) {
+    let newNote = payload
+    state.notes.push(newNote)
+  },
+  ADD_TIMESTAMP (state, payload) {
+    let newTimeStamp = payload
+    state.timestamps.push(newTimeStamp)
+  }
+}
+
+const actions = {
+  addNote (context, payload) {
+    context.commit('ADD_NOTE', payload)
+  },
+  addTimestamp (context, payload) {
+    context.commit('ADD_TIMESTAMP', payload)
+  }
+}
+
+const getters = {
+  getNotes (state) {
+    return state.notes
+  },
+  getTimestamps (state) {
+    return state.timestamps
+  },
+  getNoteCount (state) {
+    return state.notes.length
+  }
+}
+
+const store = new Vuex.Store({
+  state,
+  mutations,
+  actions,
+  getters
+})
 const inputComponent = {
   template: `<input 
   :placeholder="placeholder"
@@ -14,10 +55,8 @@ const inputComponent = {
   },
   methods: {
     monitorEnterKey() {
-      EventBus.$emit('add-note', {
-        note: this.input,
-        timestamp: new Date().toLocaleString()
-      })
+      this.$store.dispatch('addNote', this.input)
+      this.$store.dispatch('addTimestamp', new Date().toLocaleString())  
       this.input = ''
     }
   }
@@ -25,34 +64,29 @@ const inputComponent = {
 
 const noteCountComponent = {
   template: `<div class="note-count">Note count: <strong>{{ noteCount }}</strong></div>`,
-  data() {
-    return {
-      noteCount: 0
+  computed: {
+    noteCount() {
+      return this.$store.getters.getNoteCount
     }
-  },
-  created() {
-    EventBus.$on('add-note', event => this.noteCount++);
   }
 }
 
 new Vue({
   el: '#app',
+  data: {
+    placeholder: 'Enter your note'
+  },
+  store,
   components: {
     'input-component': inputComponent,
     'note-count-component': noteCountComponent
   },
-  data: {
-    notes: [],
-    timestamps: [],
-    placeholder: 'Enter a note'
-  },
-  created() {
-    EventBus.$on('add-note', event => this.addNote(event))
-  },
-  methods: {
-    addNote(event) {
-      this.notes.push(event.note)
-      this.timestamps.push(event.timestamp)
+  computed: {
+    notes() {
+      return this.$store.getters.getNotes
+    },
+    timestamps() {
+      return this.$store.getters.getTimestamps
     }
   }
 })
